@@ -18,23 +18,26 @@ $filteredData | Export-Csv -Path "../Data/filtered.csv" -NoTypeInformation
 Write-Host "Filtered data written to filtered.csv"
 
 # 3. Moving older files to the Archive folder
-
-# Rename file before moving it, so we don't have same name when more than one file being moved to folder
-
-$destination = "../Archive/$($file.Name)"
-if (Test-Path $destination) {
-    $destination = "../Archive/$($file.BaseName)_$((Get-Date).ToString('yyyyMMdd_HHmmss'))$($file.Extension)"
-}
-Move-Item -Path $file.FullName -Destination $destination
-
-
 while ($true) {
-    $files = Get-ChildItem -Path "../data" -File
+    $files = Get-ChildItem -Path "../Data" -File
     foreach ($file in $files) {
+        # Debugging output: Check the file path
+        Write-Host "Processing file: $($file.FullName)"
+
         if ($file.LastWriteTime -lt (Get-Date).AddMinutes(-1)) {
-            Move-Item -Path $file.FullName -Destination "../Archive/"
+            # Rename file before moving if the same name exists in the Archive
+            $destination = "../Archive/$($file.Name)"
+            if (Test-Path $destination) {
+                # Adding timestamp to the file name if file already exists in Archive
+                $destination = "../Archive/$($file.BaseName)_$((Get-Date).ToString('yyyyMMdd_HHmmss'))$($file.Extension)"
+            }
+            
+            # Move the file to the Archive
+            Move-Item -Path $file.FullName -Destination $destination
             Write-Host "$($file.Name) moved to Archive"
         }
     }
-    Start-Sleep -Seconds 60  # wait 60 seconds before checking again
+    
+    # Wait for 60 seconds before checking again
+    Start-Sleep -Seconds 60
 }
